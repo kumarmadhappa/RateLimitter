@@ -1,4 +1,4 @@
-package service;
+package com.ratelimit.service;
 
 import com.ratelimit.config.RateLimitConfig;
 import com.ratelimit.config.RateLimitType;
@@ -7,7 +7,6 @@ import com.ratelimit.intf.TokenBucket;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.ratelimit.config.RateLimitType.TOKEN;
 
