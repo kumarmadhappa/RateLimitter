@@ -4,7 +4,6 @@ import com.ratelimit.config.RateLimitConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class RateLimiterServiceTest {
     void setUp() {
         config = new ArrayList<>();
         config.add(new RateLimitConfig.Builder("All", TOKEN, 1, 1, 100).build());
-        config.add(new RateLimitConfig.Builder("K123", TOKEN, 3,3, 100).build());
+        config.add(new RateLimitConfig.Builder("K123", TOKEN, 3,5, 10).build());
 
         service =  new RateLimiterService(config);
     }
@@ -36,10 +35,60 @@ public class RateLimiterServiceTest {
 
         //Use up all the tokens in the bucket
         for (int i=0; i<config.get(1).getInitialCapacity(); i++){
-            service.allowRequest("K123");
+            assertTrue(service.allowRequest("K123"));
         }
 
-        boolean allowed = service.allowRequest("K123");
-        assertFalse(allowed);
+        assertFalse(service.allowRequest("K123"));
+    }
+
+    @Test
+    void allowRequestWhenTokenIsRefilled() throws InterruptedException {
+
+        //Use up all the tokens in the bucket
+        for (int i=0; i<config.get(1).getInitialCapacity(); i++){
+            assertTrue(service.allowRequest("K123"));
+        }
+
+        //Waiting for Refill time as per user Config
+        Thread.sleep(config.get(1).getWindowSizeInSeconds()* 1000L);
+
+
+        assertTrue(service.allowRequest("K123"));
+    }
+
+    @Test
+    void allowRequestWhenTokenIsRefilledAsPerRefillRate() throws InterruptedException {
+
+        //Use up all the tokens in the bucket
+        for (int i=0; i<config.get(1).getInitialCapacity(); i++){
+            assertTrue(service.allowRequest("K123"));
+        }
+
+        //Waiting for Refill time as per user Config
+        Thread.sleep(config.get(1).getWindowSizeInSeconds()* 1000L);
+
+        //Request after refill
+        for (int i=0; i<config.get(1).getFillRate(); i++){
+            assertTrue(service.allowRequest("K123"));
+        }
+    }
+
+    @Test
+    void rejectRequestWhenTokenIsNotAvailableAfterRefill() throws InterruptedException {
+
+        //Use up all the tokens in the bucket
+        for (int i=0; i<config.get(1).getInitialCapacity(); i++){
+            assertTrue(service.allowRequest("K123"));
+        }
+
+        //Waiting for Refill time as per user Config
+        Thread.sleep(config.get(1).getWindowSizeInSeconds()* 1000L);
+
+        //Use up all the tokens in the bucket after refill
+        for (int i=0; i<config.get(1).getFillRate(); i++){
+            assertTrue(service.allowRequest("K123"));
+        }
+
+        assertFalse(service.allowRequest("K123"));
     }
 }
