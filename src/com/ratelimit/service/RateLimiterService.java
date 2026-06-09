@@ -5,6 +5,7 @@ import com.ratelimit.config.RateLimitType;
 import com.ratelimit.intf.RateLimiter;
 import com.ratelimit.intf.TokenBucket;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,14 +16,15 @@ public class RateLimiterService {
     private final Map<RateLimitType, RateLimiter> rateLimiters = new ConcurrentHashMap<>();
     private final Map<String, RateLimitConfig> rateConfig =  new ConcurrentHashMap<>();
 
-    public RateLimiterService() {
-        loadRateLimitersFromConfig();
+    public RateLimiterService(List<RateLimitConfig> config) {
+        loadRateLimitersFromConfig(config);
     }
 
-    private void loadRateLimitersFromConfig() {
+    private void loadRateLimitersFromConfig(List<RateLimitConfig> config) {
         //Read Config from file or DB
-        rateConfig.put("All", new RateLimitConfig(TOKEN,"All"));
-        rateConfig.put("K123", new RateLimitConfig(TOKEN,"K123"));
+        for(RateLimitConfig cfg: config){
+            rateConfig.put(cfg.getUserId(), cfg);
+        }
 
         rateLimiters.put(TOKEN, new TokenBucket(rateConfig));
 
